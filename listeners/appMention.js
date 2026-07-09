@@ -4,6 +4,7 @@ import {
 } from "../services/trace.service.js";
 
 export async function appMention({ event, client }) {
+  console.log("appMention event:", event);
   const command = event.text.replace(/<@[^>]+>/g, "").trim();
 
   const isSave = command.toLowerCase() === "save";

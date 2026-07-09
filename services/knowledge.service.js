@@ -1,13 +1,16 @@
 import { supabase } from "../lib/supabase.js";
 
 export async function getWorkspaceConnection(teamId) {
+  console.log("Fetching workspace connection for teamId:", teamId);
   const { data, error } = await supabase
     .from("slack_connections")
     .select("*")
-    .eq("team_id", teamId)
-    .single();
+    .eq("team_id", teamId);
 
-  if (error) throw error;
+  if (error) {
+    console.log("Error fetching workspace connection:");
+    throw error;
+  }
 
   return data;
 }
@@ -20,8 +23,10 @@ export async function searchKnowledge(slackConnectionId, query) {
     .ilike("summary", `%${query}%`)
     .limit(10);
 
-  if (error) throw error;
-
+  if (error) {
+    console.log("Error searching knowledge:");
+    throw error;
+  }
   return data ?? [];
 }
 
@@ -29,10 +34,12 @@ export async function createSuggestion(payload) {
   const { data, error } = await supabase
     .from("knowledge_suggestions")
     .insert(payload)
-    .select()
-    .single();
+    .select();
 
-  if (error) throw error;
+  if (error) {
+    console.log("Error creating suggestion:");
+    throw error;
+  }
 
   return data;
 }

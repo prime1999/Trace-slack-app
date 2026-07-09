@@ -40,13 +40,14 @@
         "channels:history",
         "groups:history",
         "im:history",
-        "mpim:history"
+        "mpim:history",
+        "app_mentions:read"
       ]
     }
   },
   "settings": {
     "event_subscriptions": {
-      "bot_events": ["app_home_opened", "message.channels"]
+      "bot_events": ["app_home_opened", "message.channels", "app_mention"]
     },
     "interactivity": {
       "is_enabled": true
