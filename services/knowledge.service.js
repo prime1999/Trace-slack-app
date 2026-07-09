@@ -16,6 +16,9 @@ export async function getWorkspaceConnection(teamId) {
 }
 
 export async function searchKnowledge(slackConnectionId, query) {
+  console.log(
+    `Searching knowledge for slackConnectionId: ${slackConnectionId}, query: ${query}`,
+  );
   const { data, error } = await supabase
     .from("knowledge_entries")
     .select("*")

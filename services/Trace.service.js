@@ -17,6 +17,7 @@ export async function handleTraceQuestion({
   question,
 }) {
   const connection = await getWorkspaceConnection(teamId);
+  console.log("Workspace connection:", connection);
 
   const messages = await getThreadMessages(
     client,
