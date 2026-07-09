@@ -9,7 +9,9 @@ export async function appMention({ event, client }) {
 
   const isSave = command.toLowerCase() === "save";
 
+  console.log("isSave: ", isSave);
   if (isSave) {
+    console.log("handling trace save");
     const suggestion = await handleTraceSave({
       client,
       teamId: event.team,
@@ -28,6 +30,7 @@ export async function appMention({ event, client }) {
     return;
   }
 
+  console.log("handling trace question");
   const answer = await handleTraceQuestion({
     client,
     teamId: event.team,
