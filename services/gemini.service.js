@@ -94,9 +94,11 @@ ${question}
   }
 }
 
-export async function extractKnowledge(threadContext) {
+export async function extractKnowledge(content) {
   const prompt = `
-Extract reusable knowledge from the conversation.
+You are extracting organizational knowledge from Slack.
+
+Convert the content into a reusable knowledge record.
 
 Return ONLY valid JSON.
 
@@ -107,8 +109,32 @@ Return ONLY valid JSON.
   "confidence": 0
 }
 
-THREAD:
-${threadContext}
+Examples:
+
+Input:
+"Our CEO is Prime"
+
+Output:
+{
+  "title": "CEO",
+  "summary": "The CEO is Prime.",
+  "knowledge_type": "company_information",
+  "confidence": 0.98
+}
+
+Input:
+"Refunds require manager approval"
+
+Output:
+{
+  "title": "Refund Policy",
+  "summary": "Refunds require manager approval.",
+  "knowledge_type": "policy",
+  "confidence": 0.95
+}
+
+CONTENT:
+${content}
 `;
 
   try {
@@ -121,11 +147,11 @@ ${threadContext}
 
     return JSON.parse(cleaned);
   } catch (error) {
-    console.error("extractKnowledge failed after all model fallbacks:", error);
+    console.error("extractKnowledge failed:", error);
 
     return {
       title: "Extraction Failed",
-      summary: "Unable to extract knowledge.",
+      summary: content,
       knowledge_type: "unknown",
       confidence: 0,
     };

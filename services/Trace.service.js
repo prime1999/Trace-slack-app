@@ -47,19 +47,25 @@ export async function handleTraceSave({
   channelId,
   messageTs,
   threadTs,
+  command,
 }) {
   const connection = await getWorkspaceConnection(teamId);
 
-  const messages = await getThreadMessages(
-    client,
-    channelId,
-    messageTs,
-    threadTs,
-  );
+  let content = command.replace(/^save/i, "").trim();
 
-  const threadContext = formatThread(messages);
+  // No explicit content → save thread/parent message
+  if (!content) {
+    const messages = await getThreadMessages(
+      client,
+      channelId,
+      messageTs,
+      threadTs,
+    );
 
-  const extracted = await extractKnowledge(threadContext);
+    content = formatThread(messages);
+  }
+
+  const extracted = await extractKnowledge(content);
 
   const suggestion = await createSuggestion({
     slack_connection_id: connection.id,

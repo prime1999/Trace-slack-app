@@ -7,7 +7,7 @@ export async function appMention({ event, client }) {
   console.log("appMention event:", event);
   const command = event.text.replace(/<@[^>]+>/g, "").trim();
 
-  const isSave = command.toLowerCase() === "save";
+  const isSave = command.toLowerCase().startsWith("save");
 
   console.log("isSave: ", isSave);
   if (isSave) {
@@ -18,6 +18,7 @@ export async function appMention({ event, client }) {
       channelId: event.channel,
       messageTs: event.ts,
       threadTs: event.thread_ts,
+      command,
     });
 
     await client.chat.postMessage({
