@@ -1,14 +1,17 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-console.log("Client OK");
+import { GoogleGenAI } from "@google/genai";
 
-try {
-  const transportModule =
-    await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
-  console.log("Streamable HTTP transport found");
-  console.log(Object.keys(transportModule));
-} catch (error) {
-  console.error("Transport not found");
-  console.error(error);
-}
+console.log("API Key exists:", !!process.env.GEMINI_API_KEY);
+
+const response = await ai.models.embedContent({
+  model: "gemini-embedding-2",
+  contents: "hello world",
+});
+
+console.log(response.embeddings[0].values.length);

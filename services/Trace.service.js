@@ -4,6 +4,7 @@ import {
   getWorkspaceConnection,
   searchKnowledge,
   createSuggestion,
+  createKnowledgeEntry,
 } from "./knowledge.service.js";
 
 import { answerQuestion, extractKnowledge } from "./gemini.service.js";
@@ -53,7 +54,6 @@ export async function handleTraceSave({
 
   let content = command.replace(/^save/i, "").trim();
 
-  // No explicit content → save thread/parent message
   if (!content) {
     const messages = await getThreadMessages(
       client,
@@ -67,21 +67,99 @@ export async function handleTraceSave({
 
   const extracted = await extractKnowledge(content);
 
-  const suggestion = await createSuggestion({
+  const entry = await createKnowledgeEntry({
     slack_connection_id: connection.id,
-
     title: extracted.title,
-
     summary: extracted.summary,
-
     knowledge_type: extracted.knowledge_type,
-
     confidence: extracted.confidence,
-
     channel_id: channelId,
-
     thread_ts: threadTs || messageTs,
   });
 
-  return suggestion;
+  return entry;
+}
+
+export async function handleTraceSuggestion({
+  client,
+  triggerId,
+  teamId,
+  channelId,
+  messageTs,
+  threadTs,
+}) {
+  const connection = await getWorkspaceConnection(teamId);
+
+  const messages = await getThreadMessages(
+    client,
+    channelId,
+    messageTs,
+    threadTs,
+  );
+  console.log({ connection, messages, teamId });
+  const threadContext = formatThread(messages);
+
+  const extracted = await extractKnowledge(threadContext);
+
+  const suggestion = await createSuggestion({
+    slack_connection_id: connection.id,
+    title: extracted.title,
+    summary: extracted.summary,
+    knowledge_type: extracted.knowledge_type,
+    confidence: extracted.confidence,
+    channel_id: channelId,
+    thread_ts: threadTs || messageTs,
+  });
+
+  console.log("Suggestion created:", suggestion);
+
+  await client.chat.postMessage({
+    channel: channelId,
+    thread_ts: threadTs || messageTs,
+
+    text: "Trace found reusable knowledge",
+
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Trace found reusable knowledge*\n\n*${suggestion[0].title}*\n${suggestion[0].summary}`,
+        },
+      },
+
+      {
+        type: "actions",
+        elements: [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Approve",
+            },
+
+            style: "primary",
+
+            action_id: "approve_knowledge",
+
+            value: suggestion[0].id,
+          },
+
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "Reject",
+            },
+
+            style: "danger",
+
+            action_id: "reject_knowledge",
+
+            value: suggestion.id,
+          },
+        ],
+      },
+    ],
+  });
 }

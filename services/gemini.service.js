@@ -42,9 +42,7 @@ async function generateWithFallback(prompt) {
 
         const retryableStatuses = [429, 500, 502, 503, 504];
 
-        const isRetryable = retryableStatuses.includes(status);
-
-        if (!isRetryable) {
+        if (!retryableStatuses.includes(status)) {
           console.error(`${model} failed with non-retryable error`);
           break;
         }
@@ -64,6 +62,34 @@ async function generateWithFallback(prompt) {
 
   throw lastError;
 }
+
+/* -------------------------------- */
+/* Embeddings */
+/* -------------------------------- */
+
+export async function createEmbedding(text) {
+  try {
+    const response = await ai.models.embedContent({
+      model: "gemini-embedding-2",
+      contents: text,
+    });
+
+    const embedding = response.embeddings?.[0]?.values;
+
+    if (!embedding) {
+      throw new Error("No embedding returned from Gemini");
+    }
+
+    return embedding;
+  } catch (error) {
+    console.error("createEmbedding failed:", error);
+    throw error;
+  }
+}
+
+/* -------------------------------- */
+/* Q&A */
+/* -------------------------------- */
 
 export async function answerQuestion({
   question,
@@ -93,6 +119,10 @@ ${question}
     return "I'm having trouble reaching the AI service right now. Please try again in a moment.";
   }
 }
+
+/* -------------------------------- */
+/* Knowledge Extraction */
+/* -------------------------------- */
 
 export async function extractKnowledge(content) {
   const prompt = `
