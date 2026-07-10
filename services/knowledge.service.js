@@ -31,7 +31,7 @@ export async function searchKnowledge(slackConnectionId, query) {
 
   const queryEmbedding = await createEmbedding(query);
 
-  const { data } = await supabase.rpc("match_knowledge", {
+  const { data, error } = await supabase.rpc("match_knowledge", {
     connection_id: slackConnectionId,
     query_embedding: queryEmbedding,
     match_count: 10,

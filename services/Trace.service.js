@@ -101,6 +101,21 @@ export async function handleTraceSuggestion({
 
   const extracted = await extractKnowledge(threadContext);
 
+  console.log("Extracted knowledge:", extracted);
+
+  const matches = await searchKnowledge(connection.id, extracted.summary);
+  console.log("Knowledge matches:", matches);
+  const similarity = Number(matches[0]?.similarity ?? 0);
+
+  if (matches.length > 0 && similarity >= 0.7) {
+    await client.chat.postMessage({
+      channel: channelId,
+      thread_ts: threadTs || messageTs,
+      text: `I already know this:\n\n*${matches[0].title}*\n${matches[0].summary}`,
+    });
+    return;
+  }
+
   const suggestion = await createSuggestion({
     slack_connection_id: connection.id,
     title: extracted.title,

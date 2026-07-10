@@ -42,7 +42,7 @@ app.action("approve_knowledge", async ({ ack, body, action }) => {
     //confidence: suggestion.confidence,
     channel_id: suggestion.channel_id,
     thread_ts: suggestion.thread_ts,
-    embeding,
+    embedding,
   });
 
   await deleteSuggestion(suggestionId);
