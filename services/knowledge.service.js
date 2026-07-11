@@ -19,31 +19,53 @@ export async function getWorkspaceConnection(teamId) {
 }
 
 export async function searchKnowledge(slackConnectionId, query) {
-  console.log(
-    `Searching knowledge for slackConnectionId: ${slackConnectionId}, query: ${query}`,
-  );
-  // const { data, error } = await supabase
-  //   .from("knowledge_entries")
-  //   .select("*")
-  //   .eq("slack_connection_id", slackConnectionId)
-  //   .ilike("summary", `%${query}%`)
-  //   .limit(10);
+  let queryEmbedding;
+  try {
+    queryEmbedding = await createEmbedding(query);
 
-  const queryEmbedding = await createEmbedding(query);
+    const { data, error } = await supabase.rpc("match_knowledge", {
+      connection_id: slackConnectionId,
+      query_embedding: queryEmbedding,
+      match_count: 10,
+    });
 
-  const { data, error } = await supabase.rpc("match_knowledge", {
-    connection_id: slackConnectionId,
-    query_embedding: queryEmbedding,
-    match_count: 10,
-  });
+    if (error) {
+      console.log("Error searching knowledge:");
+      throw error;
+    }
 
-  if (error) {
-    console.log("Error searching knowledge:");
-    throw error;
+    console.log("Knowledge search results:", data);
+    return data ?? [];
+  } catch (error) {
+    console.error("Knowledge search failed:", error);
+
+    return [];
   }
+  // console.log(
+  //   `Searching knowledge for slackConnectionId: ${slackConnectionId}, query: ${query}`,
+  // );
+  // // const { data, error } = await supabase
+  // //   .from("knowledge_entries")
+  // //   .select("*")
+  // //   .eq("slack_connection_id", slackConnectionId)
+  // //   .ilike("summary", `%${query}%`)
+  // //   .limit(10);
 
-  console.log("Knowledge search results:", data);
-  return data ?? [];
+  // const queryEmbedding = await createEmbedding(query);
+
+  // const { data, error } = await supabase.rpc("match_knowledge", {
+  //   connection_id: slackConnectionId,
+  //   query_embedding: queryEmbedding,
+  //   match_count: 10,
+  // });
+
+  // if (error) {
+  //   console.log("Error searching knowledge:");
+  //   throw error;
+  // }
+
+  // console.log("Knowledge search results:", data);
+  // return data ?? [];
 }
 
 export async function createSuggestion(payload) {

@@ -67,26 +67,45 @@ async function generateWithFallback(prompt) {
 /* Embeddings */
 /* -------------------------------- */
 
+const EMBEDDING_RETRY_DELAYS = [1000, 3000, 5000];
+
 export async function createEmbedding(text) {
-  try {
-    const response = await ai.models.embedContent({
-      model: "gemini-embedding-2",
-      contents: text,
-    });
+  let lastError;
 
-    const embedding = response.embeddings?.[0]?.values;
+  for (let attempt = 0; attempt <= EMBEDDING_RETRY_DELAYS.length; attempt++) {
+    try {
+      console.log(`Creating embedding (attempt ${attempt + 1})`);
 
-    if (!embedding) {
-      throw new Error("No embedding returned from Gemini");
+      const response = await ai.models.embedContent({
+        model: "gemini-embedding-2",
+        contents: text,
+      });
+
+      const embedding = response.embeddings?.[0]?.values;
+
+      if (!embedding) {
+        throw new Error("No embedding returned from Gemini");
+      }
+
+      return embedding;
+    } catch (error) {
+      lastError = error;
+
+      console.error(
+        `Embedding attempt ${attempt + 1} failed`,
+        error?.message || error,
+      );
+
+      if (attempt < EMBEDDING_RETRY_DELAYS.length) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, EMBEDDING_RETRY_DELAYS[attempt]),
+        );
+      }
     }
-
-    return embedding;
-  } catch (error) {
-    console.error("createEmbedding failed:", error);
-    throw error;
   }
-}
 
+  throw lastError;
+}
 /* -------------------------------- */
 /* Q&A */
 /* -------------------------------- */
