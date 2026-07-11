@@ -66,6 +66,7 @@ export async function handleTraceSave({
   }
 
   const extracted = await extractKnowledge(content);
+  console.log(extracted);
 
   const entry = await createKnowledgeEntry({
     slack_connection_id: connection.id,
@@ -82,7 +83,6 @@ export async function handleTraceSave({
 
 export async function handleTraceSuggestion({
   client,
-  triggerId,
   teamId,
   channelId,
   messageTs,
@@ -96,25 +96,37 @@ export async function handleTraceSuggestion({
     messageTs,
     threadTs,
   );
-  console.log({ connection, messages, teamId });
+
   const threadContext = formatThread(messages);
 
-  const extracted = await extractKnowledge(threadContext);
+  // Search using the actual conversation
+  const matches = await searchKnowledge(connection.id, threadContext);
 
-  console.log("Extracted knowledge:", extracted);
-
-  const matches = await searchKnowledge(connection.id, extracted.summary);
-  console.log("Knowledge matches:", matches);
   const similarity = Number(matches[0]?.similarity ?? 0);
 
+  console.log("Knowledge matches:", matches);
+
+  // Existing knowledge found
   if (matches.length > 0 && similarity >= 0.7) {
+    const answer = await answerQuestion({
+      question: threadContext,
+      threadContext,
+      knowledgeContext: JSON.stringify(matches, null, 2),
+    });
+
     await client.chat.postMessage({
       channel: channelId,
       thread_ts: threadTs || messageTs,
-      text: `I already know this:\n\n*${matches[0].title}*\n${matches[0].summary}`,
+      text: answer,
     });
+
     return;
   }
+
+  // No knowledge found -> try extracting new knowledge
+  const extracted = await extractKnowledge(threadContext);
+
+  console.log("Extracted knowledge:", extracted);
 
   const suggestion = await createSuggestion({
     slack_connection_id: connection.id,
@@ -125,8 +137,6 @@ export async function handleTraceSuggestion({
     channel_id: channelId,
     thread_ts: threadTs || messageTs,
   });
-
-  console.log("Suggestion created:", suggestion);
 
   await client.chat.postMessage({
     channel: channelId,
@@ -142,7 +152,6 @@ export async function handleTraceSuggestion({
           text: `*Trace found reusable knowledge*\n\n*${suggestion[0].title}*\n${suggestion[0].summary}`,
         },
       },
-
       {
         type: "actions",
         elements: [
@@ -152,26 +161,19 @@ export async function handleTraceSuggestion({
               type: "plain_text",
               text: "Approve",
             },
-
             style: "primary",
-
             action_id: "approve_knowledge",
-
             value: suggestion[0].id,
           },
-
           {
             type: "button",
             text: {
               type: "plain_text",
               text: "Reject",
             },
-
             style: "danger",
-
             action_id: "reject_knowledge",
-
-            value: suggestion.id,
+            value: suggestion[0].id,
           },
         ],
       },
