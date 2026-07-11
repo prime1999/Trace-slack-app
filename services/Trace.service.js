@@ -7,7 +7,7 @@ import {
   createKnowledgeEntry,
 } from "./knowledge.service.js";
 
-import { answerQuestion, extractKnowledge } from "./gemini.service.js";
+import { answerQuestion, extractKnowledge, generateWithFallback } from "./gemini.service.js";
 
 export async function handleTraceQuestion({
   client,
@@ -179,4 +179,35 @@ export async function handleTraceSuggestion({
       },
     ],
   });
+}
+
+export async function detectThreadIntent(threadContext) {
+  const prompt = `
+Classify this Slack thread.
+
+Return ONLY JSON:
+
+{
+  "intent": "question"
+}
+
+OR
+
+{
+  "intent": "knowledge_capture"
+}
+
+QUESTION:
+Someone is asking for information.
+
+KNOWLEDGE_CAPTURE:
+Someone is stating a fact that should be saved.
+
+THREAD:
+${threadContext}
+`;
+
+  const result = await generateWithFallback(prompt);
+
+  return JSON.parse(result);
 }

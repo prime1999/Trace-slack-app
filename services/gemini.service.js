@@ -12,7 +12,7 @@ const MODELS = [
 
 const RETRY_DELAYS = [1000, 3000, 5000];
 
-async function generateWithFallback(prompt) {
+export async function generateWithFallback(prompt) {
   let lastError;
 
   for (const model of MODELS) {
@@ -145,41 +145,89 @@ ${question}
 
 export async function extractKnowledge(content) {
   const prompt = `
-You are extracting organizational knowledge from Slack.
+You are Trace, an AI knowledge curator for Slack.
 
-Convert the content into a reusable knowledge record.
+Your job is to determine whether a conversation contains reusable organizational knowledge.
 
-Return ONLY valid JSON.
+IMPORTANT RULES:
+
+- Only extract EXPLICIT facts.
+- Never guess missing information.
+- Never infer facts from questions.
+- Never infer facts from uncertainty.
+- Never infer facts from mentions, bot names, user IDs, or Slack usernames.
+- Never create knowledge from incomplete discussions.
+- Never create knowledge from assumptions or speculation.
+
+Examples of things that SHOULD NOT be saved:
+
+- "Who is our CEO?"
+- "I think it might be John."
+- "Maybe we use Supabase."
+- "I forgot his name."
+- "@trace"
+- "hello"
+
+If no clear factual knowledge exists, return:
 
 {
+  "should_save": false,
+  "reason": "No factual knowledge found"
+}
+
+If factual knowledge exists, return:
+
+{
+  "should_save": true,
   "title": "",
   "summary": "",
   "knowledge_type": "",
   "confidence": 0
 }
 
+Knowledge types:
+- company_information
+- policy
+- process
+- technical_decision
+- architecture
+- product_information
+- team_information
+- other
+
 Examples:
 
 Input:
-"Our CEO is Prime"
+"Our CEO is Priime"
 
 Output:
 {
+  "should_save": true,
   "title": "CEO",
-  "summary": "The CEO is Prime.",
+  "summary": "The CEO is Priime.",
   "knowledge_type": "company_information",
   "confidence": 0.98
 }
 
 Input:
-"Refunds require manager approval"
+"We use Supabase Auth."
 
 Output:
 {
-  "title": "Refund Policy",
-  "summary": "Refunds require manager approval.",
-  "knowledge_type": "policy",
-  "confidence": 0.95
+  "should_save": true,
+  "title": "Authentication",
+  "summary": "The application uses Supabase Auth for authentication.",
+  "knowledge_type": "technical_decision",
+  "confidence": 0.97
+}
+
+Input:
+"Who is our boss? John? Nope I forgot his name."
+
+Output:
+{
+  "should_save": false,
+  "reason": "No factual knowledge found"
 }
 
 CONTENT:
@@ -199,10 +247,8 @@ ${content}
     console.error("extractKnowledge failed:", error);
 
     return {
-      title: "Extraction Failed",
-      summary: content,
-      knowledge_type: "unknown",
-      confidence: 0,
+      should_save: false,
+      reason: "Extraction failed",
     };
   }
 }

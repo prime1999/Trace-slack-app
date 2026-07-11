@@ -9,9 +9,9 @@ const ai = new GoogleGenAI({
 
 console.log("API Key exists:", !!process.env.GEMINI_API_KEY);
 
-const response = await ai.models.embedContent({
-  model: "gemini-embedding-2",
-  contents: "hello world",
+const response = await ai.models.generateContent({
+  model: "gemini-3.5-flash",
+  contents: "hello",
 });
 
-console.log(response.embeddings[0].values.length);
+console.log(response.text);

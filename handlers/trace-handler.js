@@ -1,5 +1,5 @@
 import { App } from "@slack/bolt";
-import { handleTrace } from "../services/Trace.service";
+import { handleTrace } from "../services/Trace.service.js";
 
 export function registerTraceHandler(app) {
   app.event("app_mention", async ({ event, client }) => {
